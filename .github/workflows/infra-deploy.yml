@@ -4,12 +4,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "infra-pipeline/**"
 
-permissions:
-  id-token: write
-  contents: read
+  workflow_dispatch:
 
 jobs:
   deploy-infra:
@@ -56,4 +52,3 @@ jobs:
             --stack-name devops-eks-stack \
             --region us-east-1 \
             --capabilities CAPABILITY_NAMED_IAM
-
