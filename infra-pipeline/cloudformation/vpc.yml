@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: VPC infrastructure for AWS DevOps Pipeline 1
+
+Resources:
+  DevOpsVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.20.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: devops-pipeline-vpc
+
+  PublicSubnetOne:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DevOpsVPC
+      CidrBlock: 10.20.1.0/24
+      AvailabilityZone: us-east-1a
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: devops-public-subnet-1
+
+  PublicSubnetTwo:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref DevOpsVPC
+      CidrBlock: 10.20.2.0/24
+      AvailabilityZone: us-east-1b
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: devops-public-subnet-2
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: devops-igw
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref DevOpsVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref DevOpsVPC
+      Tags:
+        - Key: Name
+          Value: devops-public-rt
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetOneRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetOne
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetTwoRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetTwo
+      RouteTableId: !Ref PublicRouteTable
+
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTP
+      VpcId: !Ref DevOpsVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: devops-ec2-sg
+
+Outputs:
+  VpcId:
+    Value: !Ref DevOpsVPC
+    Export:
+      Name: DevOpsVpcId
+
+  PublicSubnetOne:
+    Value: !Ref PublicSubnetOne
+    Export:
+      Name: DevOpsPublicSubnetOne
+
+  PublicSubnetTwo:
+    Value: !Ref PublicSubnetTwo
+    Export:
+      Name: DevOpsPublicSubnetTwo
+
+  EC2SecurityGroup:
+    Value: !Ref EC2SecurityGroup
+    Export:
+      Name: DevOpsEC2SecurityGroup

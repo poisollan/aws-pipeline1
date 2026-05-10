@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: IAM roles for EKS, EC2, and pipeline infrastructure
+
+Resources:
+  EKSClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: devops-eks-cluster-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - eks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+      Tags:
+        - Key: Name
+          Value: devops-eks-cluster-role
+
+  EKSNodeGroupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: devops-eks-nodegroup-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+      Tags:
+        - Key: Name
+          Value: devops-eks-nodegroup-role
+
+  EC2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: devops-ec2-instance-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags:
+        - Key: Name
+          Value: devops-ec2-instance-role
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: devops-ec2-instance-profile
+      Roles:
+        - !Ref EC2InstanceRole
+
+Outputs:
+  EKSClusterRoleArn:
+    Value: !GetAtt EKSClusterRole.Arn
+    Export:
+      Name: DevOpsEKSClusterRoleArn
+
+  EKSNodeGroupRoleArn:
+    Value: !GetAtt EKSNodeGroupRole.Arn
+    Export:
+      Name: DevOpsEKSNodeGroupRoleArn
+
+  EC2InstanceProfile:
+    Value: !Ref EC2InstanceProfile
+    Export:
+      Name: DevOpsEC2InstanceProfile

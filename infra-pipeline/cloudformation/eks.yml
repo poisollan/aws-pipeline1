@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: EKS cluster and managed node group for Pipeline 1
+
+Resources:
+  DevOpsEKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: devops-pipeline-eks
+      Version: "1.31"
+      RoleArn: !ImportValue DevOpsEKSClusterRoleArn
+      ResourcesVpcConfig:
+        EndpointPublicAccess: true
+        SubnetIds:
+          - !ImportValue DevOpsPublicSubnetOne
+          - !ImportValue DevOpsPublicSubnetTwo
+
+  DevOpsEKSNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    DependsOn: DevOpsEKSCluster
+    Properties:
+      ClusterName: !Ref DevOpsEKSCluster
+      NodegroupName: devops-pipeline-nodegroup
+      NodeRole: !ImportValue DevOpsEKSNodeGroupRoleArn
+      Subnets:
+        - !ImportValue DevOpsPublicSubnetOne
+        - !ImportValue DevOpsPublicSubnetTwo
+      InstanceTypes:
+        - t3.micro
+      ScalingConfig:
+        DesiredSize: 1
+        MinSize: 1
+        MaxSize: 2
+      DiskSize: 20
+
+Outputs:
+  EKSClusterName:
+    Value: !Ref DevOpsEKSCluster
+    Export:
+      Name: DevOpsEKSClusterName
+
+  EKSNodeGroupName:
+    Value: !Ref DevOpsEKSNodeGroup
+    Export:
+      Name: DevOpsEKSNodeGroupName
